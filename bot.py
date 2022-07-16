@@ -35,7 +35,7 @@ class Database:
         ''')
 
     def insert_submission(self, keyword, url, author):
-        self.cur.execute("INSERT INTO submissions (keyword, url, author) VALUES (?, ?, ?)", (keywords, link, author))
+        self.cur.execute("INSERT INTO submissions (keyword, url, author) VALUES (?, ?, ?)", (keyword, url, author))
         self.conn.commit()
 
     def get_submissions(self):
@@ -87,9 +87,13 @@ async def on_message(message):
     if message.author == bot.user or message.channel.id != LINKS_CHANNEL_ID or message.content.startswith(PREFIX):
         return
 
-    results = re.search(LINK_RE, message.content)
+    msg = message.content
+    if message.attachments:
+        msg += f" {message.attachments[0].url}"
+
+    results = re.search(LINK_RE, msg)
     if not results or len(results.groups()) != 2:
-        await message.channel.send("Invalid submission format. Must contain keyword(s) and URL. Example: Python https://realpython.com/how-to-make-a-discord-bot-python/")
+        await message.channel.send("Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: Python <https://realpython.com/how-to-make-a-discord-bot-python/>")
     else:
         keywords, link = results.groups()
         db.insert_submission(keywords, link, message.author.id)
