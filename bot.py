@@ -25,11 +25,14 @@ load_dotenv()
 LINK_RE = "(.*)\s+(https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*))"
 CSV_HEADERS = ['ID', 'Keyword', 'URL', 'Author', 'Created On']
 JSON_HEADERS = ["id", "keyword", "url", "author", "created_on"]
+
 PREFIX=">"
 LINKS_CHANNEL_ID = 997609565334020156
 BACKUPS_DIR = pathlib.Path("backups")
+
 APP_COLOR=0x4287f5
 ERROR_COLOR=0xf54e42
+SUCCESS_COLOR=0x63c771
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -52,13 +55,17 @@ class Database:
             )
         ''')
 
-    def insert_submission(self, keyword, url, author):
-        self.cur.execute("INSERT INTO submissions (keyword, url, author) VALUES (?, ?, ?)", (keyword, url, author))
-        self.conn.commit()
-
     def get_submissions(self):
         self.cur.execute("SELECT * FROM submissions")
         return self.cur.fetchall()
+    
+    def insert_submission(self, keyword, url, author):
+        self.cur.execute("INSERT INTO submissions (keyword, url, author) VALUES (?, ?, ?)", (keyword, url, author))
+        self.conn.commit()
+    
+    def remove_submission(self, url):
+        self.cur.execute("DELETE FROM submissions WHERE url = ?", (url))
+        self.conn.commit()
 
 def subs_to_csv(filename = "temp.csv"):
     rows = db.get_submissions()
@@ -110,15 +117,26 @@ async def on_message(message):
 
     results = re.search(LINK_RE, msg)
     if not results or len(results.groups()) != 2:
-        embed = discord.Embed(title="Invalid format", description="Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: Python https://realpython.com/how-to-make-a-discord-bot-python/", color=ERROR_COLOR)
+        embed = discord.Embed(title="Invalid format", 
+                    description='''Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```''', 
+                    color=ERROR_COLOR)
+         
         await message.channel.send(embed=embed)
     else:
         keywords, link = results.groups()
+        
+        embed = discord.Embed(title="Success", 
+                    description=(f'Successfully added <{link}> to the resource database.'), 
+                    color=SUCCESS_COLOR)
+        
+        await message.channel.send(embed=embed)
         db.insert_submission(keywords, link, message.author.id)
 
+# on ready
 @bot.event
 async def on_ready():
-    print(f"Bot has logged in")
+    print(f'\nlogged in as {bot.user} @{str(datetime.datetime.now())}')
+    print(f'prefix: {PREFIX}\n')
 
 bot.run(os.getenv('TOKEN'))
 
