@@ -21,6 +21,8 @@ import datetime
 from discord.ext import commands
 from dotenv import load_dotenv
 
+load_dotenv()
+
 LINK_RE = "(.*)\s+(https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*))"
 CSV_HEADERS = ['ID', 'Keyword', 'URL', 'Author', 'Created On']
 JSON_HEADERS = ["id", "keyword", "url", "author", "created_on"]
