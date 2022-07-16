@@ -2,7 +2,6 @@
 TODO
 - Description for better filtering
 - Use SEO metadata from URLs for search
-- Embeds instead of regular plain-text
 - Search command
     - By author, date ranges, text query, filter
 - Docs
@@ -29,6 +28,8 @@ JSON_HEADERS = ["id", "keyword", "url", "author", "created_on"]
 PREFIX=">"
 LINKS_CHANNEL_ID = 997609565334020156
 BACKUPS_DIR = pathlib.Path("backups")
+APP_COLOR=0x4287f5
+ERROR_COLOR=0xf54e42
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -94,7 +95,8 @@ db = Database("data.db")
 # commands
 @bot.command()
 async def export(ctx):
-    await ctx.send("What format would you like?", view=ExportEmbedView())
+    embed = discord.Embed(title="Export Config", description="What format would you like?", color=APP_COLOR)
+    await ctx.send(embed=embed, view=ExportEmbedView())
 
 # events
 @bot.listen()
@@ -108,7 +110,8 @@ async def on_message(message):
 
     results = re.search(LINK_RE, msg)
     if not results or len(results.groups()) != 2:
-        await message.channel.send("Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: Python <https://realpython.com/how-to-make-a-discord-bot-python/>")
+        embed = discord.Embed(title="Invalid format", description="Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: Python https://realpython.com/how-to-make-a-discord-bot-python/", color=ERROR_COLOR)
+        await message.channel.send(embed=embed)
     else:
         keywords, link = results.groups()
         db.insert_submission(keywords, link, message.author.id)
