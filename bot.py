@@ -1,9 +1,23 @@
+"""
+TODO
+- Description for better filtering
+- Use SEO metadata from URLs for search
+- Embeds instead of regular plain-text
+- Search command
+    - By author, date ranges, text query, filter
+- Docs
+- Import from bookmarks?
+"""
+
 import discord
 import os
 import re
 import csv
 import json
 import sqlite3
+import schedule
+import pathlib
+import datetime
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -12,6 +26,7 @@ CSV_HEADERS = ['ID', 'Keyword', 'URL', 'Author', 'Created On']
 JSON_HEADERS = ["id", "keyword", "url", "author", "created_on"]
 PREFIX=">"
 LINKS_CHANNEL_ID = 997609565334020156
+BACKUPS_DIR = pathlib.Path("backups")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -42,35 +57,34 @@ class Database:
         self.cur.execute("SELECT * FROM submissions")
         return self.cur.fetchall()
 
-    
-class ExportEmbedView(discord.ui.View):
-    def __init__(self, rows, ctx):
-        super().__init__()
-        self.ctx = ctx
+def subs_to_csv(filename = "temp.csv"):
+    rows = db.get_submissions()
+    with open(filename, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(CSV_HEADERS)
+        writer.writerows(rows)
 
+def subs_to_json(filename = "temp.json"):
+    rows = db.get_submissions()
+    records = []
+    for row in rows:
+        record = {}
+        for idx, val in enumerate(row):
+            record[JSON_HEADERS[idx]] = val
+        records.append(record)
+    
+    with open(filename, "w") as f:
+        json.dump(records, f)
+
+class ExportEmbedView(discord.ui.View):
     @discord.ui.button(label='CSV', style=discord.ButtonStyle.green)
     async def export_csv(self, interaction: discord.Interaction, button: discord.ui.Button):
-        rows = db.get_submissions()
-        with open("temp.csv", 'w') as f:
-            writer = csv.writer(f)
-            writer.writerow(CSV_HEADERS)
-            writer.writerows(rows)
-
+        subs_to_csv()
         await interaction.response.send_message(file=discord.File("temp.csv"))
 
     @discord.ui.button(label='JSON', style=discord.ButtonStyle.red)
     async def export_json(self, interaction: discord.Interaction, button: discord.ui.Button):
-        rows = db.get_submissions()
-        records = []
-        for row in rows:
-            record = {}
-            for idx, val in enumerate(row):
-                record[JSON_HEADERS[idx]] = val
-            records.append(record)
-        
-        with open("temp.json", "w") as f:
-            json.dump(records, f)
-
+        subs_to_json()
         await interaction.response.send_message(file=discord.File("temp.json"))
 
 db = Database("data.db")
@@ -78,8 +92,7 @@ db = Database("data.db")
 # commands
 @bot.command()
 async def export(ctx):
-    await ctx.send("What format would you like?", view=ExportEmbedView(ctx))
-
+    await ctx.send("What format would you like?", view=ExportEmbedView())
 
 # events
 @bot.listen()
@@ -103,3 +116,11 @@ async def on_ready():
     print(f"Bot has logged in")
 
 bot.run(os.getenv('TOKEN'))
+
+# setup automatic weekly backups
+def job():
+    BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
+    full_path = BACKUPS_DIR / pathlib.Path(f"{datetime.datetime.now():%Y-%m-%d}.json")
+    subs_to_json(full_path)
+
+schedule.every().monday.do(job)
