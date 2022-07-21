@@ -35,3 +35,65 @@ Run the bot:
 ```
 python src/bot.py
 ```
+
+## Commands
+
+### Add submission
+
+Adds a single submission to the resource database.
+
+#### Format
+
+```
+"[keyword(s)]" "[description]" [link]
+```
+
+Keywords can be separated with any delimiter. Description and keywords must be wrapped within quotes, but the link should not be.
+There is no specific command for this functionality, you can simply send a message with this format to the designated channel, like #submissions.
+
+#### Example
+
+```
+"Programming" "Ask and view programming questions" https://stackoverflow.com/
+```
+
+### Import links
+
+Batch imports resources to the database using a file of links.
+
+#### Format
+
+`>importlinks` with an attached text file. The file must include _only_ links on separate lines.
+
+#### Example
+
+![Example use case of importlinks](./screenshots/importlinks.png)
+
+### Search
+
+Sends a search query to the database given a set of parameters and returns the result. Limit must be a valid integer greater than 0.
+Optional: `[user]` and `[limit]`. An empty query "" means no text filtering.
+
+#### Format
+
+```
+>search "[query]" [user] [limit]
+```
+
+#### Example
+
+![Example use case of search](./screenshots/search.png)
+
+### Export
+
+Exports a list of saved resources into a given filetype parameter (either json or csv).
+
+#### Format
+
+```
+>export
+```
+
+#### Example
+
+![Example use case of export](./screenshots/export.png)
