@@ -90,4 +90,7 @@ async def send_paginated_submissions(ctx, records):
     # TODO: set_author() on embed if filtered by author
     num_pages = ceil(len(records) / 12)
     embeds = [create_submissions_embed(records[i:i+12], idx, num_pages) for idx, i in enumerate(range(0, len(records), 12), 1)]
-    await Paginator.Simple().start(ctx, pages=embeds)
+    if not embeds:
+        await discord_send_error(ctx, "No results", "Unable to find submissions matching criteria")
+    else:
+        await Paginator.Simple().start(ctx, pages=embeds)
