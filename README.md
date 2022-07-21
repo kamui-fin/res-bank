@@ -50,6 +50,7 @@ Adds a single submission to the resource database.
 
 Keywords can be separated with any delimiter. Description and keywords must be wrapped within quotes, but the link should not be.
 There is no specific command for this functionality, you can simply send a message with this format to the designated channel, like #submissions.
+As there should be no duplicate resources in the database, the bot will notify you if there was a collision.
 
 #### Example
 
@@ -97,3 +98,7 @@ Exports a list of saved resources into a given filetype parameter (either json o
 #### Example
 
 ![Example use case of export](./screenshots/export.png)
+
+## Backups
+
+Backups of the database are automatically generated every Monday with the script in the form of JSON files. They are placed in the `backups/` directory.

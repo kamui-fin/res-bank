@@ -1,13 +1,11 @@
-"""
-TODO
-- Docs
-"""
-
 import sys
 import discord
+import time
 import os
+import sqlite3
 import schedule
 import typing
+import threading
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -110,6 +108,8 @@ async def on_message(message):
         await post_submission_update(bot.get_channel(UPDATES_CHANNEL_ID), db, id, message.author)
         embed = discord.Embed(title="Success", description=f"Successfully added entry", color=SUCCESS_COLOR)
         await message.channel.send(embed=embed)
+    except sqlite3.DatabaseError:
+        await discord_send_error(message.channel, "Duplicate submission", "Cannot insert a resource that already exists in the database")
     except (ValueError, SyntaxError):
         await discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s), an optional description, and URL OR attachment. Example: ```'Python Documentation' 'Useful resource for learning about venv'  https://docs.python.org/3/tutorial/venv.html```")
     except Exception as e:
@@ -125,6 +125,24 @@ token = os.getenv('TOKEN')
 if not token:
     sys.exit("Must set a token in .env to run bot")
 
-bot.run(token)
+def run_continuously(interval):
+    cease_continuous_run = threading.Event()
+
+    class ScheduleThread(threading.Thread):
+        @classmethod
+        def run(cls):
+            while not cease_continuous_run.is_set():
+                schedule.run_pending()
+                time.sleep(interval)
+
+    continuous_thread = ScheduleThread()
+    continuous_thread.start()
+    return cease_continuous_run
+
 
 schedule.every().monday.do(backup)
+
+# Start the background thread
+stop_run_continuously = run_continuously(HOUR_INTERVAL)
+
+bot.run(token)
