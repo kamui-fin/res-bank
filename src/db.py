@@ -10,7 +10,9 @@ class Database:
         self.cur.execute('''
             CREATE TABLE IF NOT EXISTS submissions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                keyword TEXT NOT NULL,
+                keywords TEXT NOT NULL,
+                description TEXT,
+                meta_description TEXT,
                 url TEXT NOT NULL UNIQUE,
                 author INTEGER NOT NULL,
                 created_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
@@ -21,10 +23,6 @@ class Database:
         self.cur.execute("SELECT * FROM submissions")
         return self.cur.fetchall()
     
-    def insert_submission(self, keyword, url, author):
-        self.cur.execute("INSERT INTO submissions (keyword, url, author) VALUES (?, ?, ?)", (keyword, url, author))
-        self.conn.commit()
-    
-    def remove_submission(self, url):
-        self.cur.execute("DELETE FROM submissions WHERE url = ?", (url))
+    def insert_submission(self, keyword, url, author, desc = None, meta_desc = None):
+        self.cur.execute("INSERT INTO submissions (keyword, url, author, desc, meta_description) VALUES (?, ?, ?, ?, ?)", (keyword, url, author, desc, meta_desc))
         self.conn.commit()

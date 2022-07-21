@@ -13,3 +13,7 @@ SUCCESS_COLOR=0x63c771
 
 BASE_DIR = pathlib.Path(__file__).parent.parent
 BACKUPS_DIR = pathlib.Path("backups")
+
+LINK_RE = "https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)"
+SUB_DESC_RE = f"^['\"](.*)['\"]\s+['\"](.*)['\"]\s+{LINK_RE}"
+SUB_KEY_RE = f"^['\"](.*)['\"]\s+{LINK_RE}"

@@ -21,8 +21,6 @@ from db import Database
 
 load_dotenv(BASE_DIR / '.env')
 
-LINK_RE = "(.*)\s+(https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*))"
-
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix=PREFIX, intents=intents)
@@ -56,26 +54,17 @@ async def on_message(message):
     if message.author == bot.user or message.channel.id != LINKS_CHANNEL_ID or message.content.startswith(PREFIX):
         return
 
-    msg = message.content
+    msg = message.content.strip()
     if message.attachments:
         msg += f" {message.attachments[0].url}"
 
-    results = re.search(LINK_RE, msg)
-    if not results or len(results.groups()) != 2:
-        embed = discord.Embed(title="Invalid format", 
-                    description='''Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```''', 
-                    color=ERROR_COLOR)
-         
-        await message.channel.send(embed=embed)
-    else:
-        keywords, link = results.groups()
-        
-        embed = discord.Embed(title="Success", 
-                    description=(f'Successfully added <{link}> to the resource database.'), 
-                    color=SUCCESS_COLOR)
-        
-        await message.channel.send(embed=embed)
-        db.insert_submission(keywords, link, message.author.id)
+    try:
+        # no success msg to avoid clogging up channel
+        keywords, description, link = parse_submission(msg)
+        seo_desc = fetch_metadesc(link)
+        db.insert_submission(keywords, link, message.author.id, description, seo_desc)
+    except (ValueError, SyntaxError) as e:
+        discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```", ERROR_COLOR)
 
 # on ready
 @bot.event
