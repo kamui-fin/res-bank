@@ -10,7 +10,7 @@ def namedtuple_factory(cursor, row):
 
 class Database:
     def __init__(self, path):
-        self.conn = sqlite3.connect("data.db")
+        self.conn = sqlite3.connect(path)
         self.conn.row_factory = namedtuple_factory
         self.cur = self.conn.cursor()
         self.initialize_tables()

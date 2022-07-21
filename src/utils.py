@@ -91,7 +91,7 @@ def create_submissions_embed(records, author):
     # len(records) <= 12
     embed = discord.Embed(title=f"Search Results", color=APP_COLOR)
     for record in records:
-        embed.add_field(name=record.link, value=get_priority(record, ["description", "meta_description", "meta_title", "keywords"]), inline=False)
+        embed.add_field(name=record.url, value=get_priority(record, ["description", "meta_description", "meta_title", "keywords"]), inline=False)
         if author:
             embed.set_author(name=author.name, icon_url=author.avatar.url)
     return embed

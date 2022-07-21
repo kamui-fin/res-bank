@@ -86,7 +86,8 @@ async def importlinks(ctx, keywords: typing.Optional[str]):
 
 @bot.command()
 async def help(ctx):
-    await ctx.send("help")
+    embed = discord.Embed(title="Documentation", description=f"https://github.com/kamui-fin/res-bank/blob/main/README.md", color=APP_COLOR)
+    await ctx.send(embed=embed)
 
 # events
 
@@ -107,11 +108,11 @@ async def on_message(message):
         
         id = db.insert_submission(keywords or seo_keywords or seo_title, link, message.author.id, description, seo_title, seo_desc)
         await post_submission_update(bot.get_channel(UPDATES_CHANNEL_ID), db, id, message.author)
-    except (ValueError, SyntaxError) as e:
-        print(e)
-        await discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```")
+        embed = discord.Embed(title="Success", description=f"Successfully added entry", color=SUCCESS_COLOR)
+        await message.channel.send(embed=embed)
+    except (ValueError, SyntaxError):
+        await discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s), an optional description, and URL OR attachment. Example: ```'Python Documentation' 'Useful resource for learning about venv'  https://docs.python.org/3/tutorial/venv.html```")
     except Exception as e:
-        print(e)
         await discord_send_error(message.channel, "Internal Server Error", "Unable to register submission. Please report this to the admin")
 
 # on ready

@@ -13,3 +13,25 @@ This is a Discord bot for our server which is meant for centralized resource agg
   - Custom limit option
   - Paginated 12 records per page using new interactions library
 - Immutable records with a constant log of newly added submissions
+
+## Installation
+
+Pull the repository and install dependencies:
+
+```
+git clone https://github.com/kamui-fin/res-bank.git
+cd res-bank
+pip install -r requirements.txt
+```
+
+Add a `.env` file with the discord token for the bot. Make sure to replace `{token}` with your actual token.
+
+```
+echo "TOKEN={token}" >> .env
+```
+
+Run the bot:
+
+```
+python src/bot.py
+```
