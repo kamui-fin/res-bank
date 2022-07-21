@@ -1,6 +1,5 @@
 """
 TODO
-- Import and export bookmarks
 - Docs
 """
 
