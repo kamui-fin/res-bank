@@ -1,7 +1,7 @@
 import pathlib
 
-CSV_HEADERS = ['ID', 'Keyword', 'URL', 'Author', 'Created On']
-JSON_HEADERS = ["id", "keyword", "url", "author", "created_on"]
+CSV_HEADERS = ['ID', 'Keywords', 'Description', 'SEO Title', 'SEO Description', 'URL', 'Author', 'Created On']
+JSON_HEADERS = ["id", "keywords", 'description', 'meta_title', 'meta_description',  "url", "author", "created_on"]
 
 PREFIX=">"
 

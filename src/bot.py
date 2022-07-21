@@ -1,17 +1,16 @@
 """
 TODO
-- Description for better filtering
-- Use SEO metadata from URLs for search
 - Search command
     - By author, date ranges, text query, filter
-- Docs
 - Import from bookmarks?
+- Docs
 """
 
 import discord
 import os
 import re
 import schedule
+import typing
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -46,6 +45,12 @@ async def export(ctx):
     embed = discord.Embed(title="Export Config", description="What format would you like?", color=APP_COLOR)
     await ctx.send(embed=embed, view=ExportEmbedView())
 
+@bot.command()
+async def search(ctx, query: str, user: typing.Optional[discord.Member], limit: typing.Optional[int]):
+    user_id = user.id if user else None
+    records = db.get_submissions_by_query(query, user_id, limit)
+    await send_paginated_submissions(ctx, records)
+
 # events
 
 # on submit to #links, add to db
@@ -61,10 +66,10 @@ async def on_message(message):
     try:
         # no success msg to avoid clogging up channel
         keywords, description, link = parse_submission(msg)
-        seo_desc = fetch_metadesc(link)
-        db.insert_submission(keywords, link, message.author.id, description, seo_desc)
+        seo_title, seo_desc = fetch_metadesc(link)
+        db.insert_submission(','.join(keywords), link, message.author.id, description, seo_title, seo_desc)
     except (ValueError, SyntaxError) as e:
-        discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```", ERROR_COLOR)
+        await discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```", ERROR_COLOR)
 
 # on ready
 @bot.event

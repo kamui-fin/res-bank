@@ -7,6 +7,10 @@ name = "pypi"
 "discord.py" = {git = "https://github.com/Rapptz/discord.py"}
 python-dotenv = "*"
 schedule = "*"
+requests = "*"
+bs4 = "*"
+whoosh = "*"
+"discord.py-pagination" = "*"
 
 [dev-packages]
 

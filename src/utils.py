@@ -2,9 +2,17 @@ import datetime
 import csv
 import json
 import requests
+from math import ceil
 from bs4 import BeautifulSoup as BS
 
 from config import *
+
+def get_priority(arr, indices):
+    val = None
+    for index in indices:
+        val = arr[index]
+        if val:
+            return val
 
 def subs_to_csv(filename = "temp.csv"):
     rows = db.get_submissions()
@@ -51,12 +59,33 @@ def parse_submission(text):
     except: # propagate split() and syntax errors
         raise err
 
-def fetch_metadesc(link):
+def fetch_meta(link):
     response = requests.get(url)
     soup = BS(response.text)
-    metas = soup.find_all('meta')
-    return ' '.join([meta.attrs['content'] for meta in metas if 'name' in meta.attrs and meta.attrs['name'] == 'description'])
+    title = soup.find("meta",  property="og:title")
+    desc = soup.find("meta",  property="og:description")
 
-def discord_send_error(ctx, title, desc):
+    title = title["content"] if title else None
+    desc = url["content"] if url else None
+    return title, desc
+
+async def discord_send_error(ctx, title, desc):
     embed = discord.Embed(title=title, description=desc, color=ERROR_COLOR)
     await ctx.send(embed=embed)
+
+def create_submissions_embed(records, curr, total):
+    # len(records) <= 12
+    embed = discord.Embed(title="Results - {curr} of {total}", color=APP_COLOR)
+    for record in records:
+        embed.add_field(name="Title", value=get_priority(record, [2, 3, 1]), inline=False)
+        embed.add_field(name="Link", value=record[5], inline=False)
+    return embed
+
+async def send_paginated_submissions(ctx, records):
+    # 12 records / page
+    # Priority: Custom desc > SEO title > keywords
+    # Paginate with buttons
+    # TODO: set_author() on embed if filtered by author
+    num_pages = ceil(len(records) / 12)
+    embeds = [create_submissions_embed(records[i:i+12], idx, num_pages) for idx, i in enumerate(range(0, len(records), 12), 1)]
+    await Paginator.Simple().start(ctx, pages=embeds)
