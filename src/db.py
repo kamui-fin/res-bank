@@ -1,12 +1,20 @@
 import sqlite3
 import os
+from collections import namedtuple
+
+def namedtuple_factory(cursor, row):
+    """Returns sqlite rows as named tuples."""
+    fields = [col[0] for col in cursor.description]
+    Row = namedtuple("Row", fields)
+    return Row(*row)
 
 class Database:
     def __init__(self, path):
         self.conn = sqlite3.connect("data.db")
+        self.conn.row_factory = namedtuple_factory
         self.cur = self.conn.cursor()
         self.initialize_tables()
-    
+
     def initialize_tables(self):
         self.cur.execute('''
             CREATE TABLE IF NOT EXISTS submissions (
@@ -41,6 +49,10 @@ class Database:
         self.cur.execute("SELECT * FROM submissions")
         return self.cur.fetchall()
 
+    def get_submission_by_id(self, id):
+        self.cur.execute("SELECT * FROM submissions WHERE id = ?", (id,))
+        return self.cur.fetchone()
+
     def get_submissions_by_query(self, query, user_id, limit):
         sql = """SELECT * FROM search_sub WHERE 1"""
         params = {}
@@ -61,4 +73,4 @@ class Database:
                             VALUES (?, ?, ?, ?, ?, ?)""",
                             (keyword, url, author, desc, meta_title, meta_desc))
         self.conn.commit()
-
+        return self.cur.lastrowid

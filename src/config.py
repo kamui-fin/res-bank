@@ -6,6 +6,7 @@ JSON_HEADERS = ["id", "keywords", 'description', 'meta_title', 'meta_description
 PREFIX=">"
 
 LINKS_CHANNEL_ID = 997609565334020156
+UPDATES_CHANNEL_ID = 999732341482201199
 
 APP_COLOR=0x4287f5
 ERROR_COLOR=0xf54e42

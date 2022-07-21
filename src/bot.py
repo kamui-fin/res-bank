@@ -1,5 +1,6 @@
 """
 TODO
+- Display in #db
 - Import from bookmarks?
 - Docs
 """
@@ -20,7 +21,7 @@ load_dotenv(BASE_DIR / '.env')
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix=PREFIX, intents=intents)
+bot = commands.Bot(command_prefix=PREFIX, intents=intents, help_command=None)
 
 class ExportEmbedView(discord.ui.View):
     @discord.ui.button(label='CSV', style=discord.ButtonStyle.green)
@@ -44,10 +45,14 @@ async def export(ctx):
     await ctx.send(embed=embed, view=ExportEmbedView())
 
 @bot.command()
-async def search(ctx, query: str, user: typing.Optional[discord.Member], limit: typing.Optional[int]):
+async def search(ctx, query: str, user: typing.Optional[discord.Member], limit: typing.Optional[int] = 0):
     user_id = user.id if user else None
     records = db.get_submissions_by_query(query, user_id, limit)
-    await send_paginated_submissions(ctx, records)
+    await send_paginated_submissions(ctx, records, user)
+
+@bot.command()
+async def help(ctx):
+    await ctx.send("help")
 
 # events
 
@@ -61,16 +66,18 @@ async def on_message(message):
     if message.attachments:
         msg += f" {message.attachments[0].url}"
 
-    try:
-        # no success msg to avoid clogging up channel
-        keywords, description, link = parse_submission(msg)
-        seo_title, seo_desc = fetch_meta(link)
-        db.insert_submission(','.join(keywords), link, message.author.id, description, seo_title, seo_desc)
-    except (ValueError, SyntaxError) as e:
-        await discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```")
-    except Exception as e:
-        print(e)
-        await discord_send_error(message.channel, "Internal Server Error", "Unable to register submission. Please report this to the admin")
+    # try:
+    # no success msg to avoid clogging up channel
+    keywords, description, link = parse_submission(msg)
+    seo_title, seo_desc = fetch_meta(link)
+    id = db.insert_submission(','.join(keywords), link, message.author.id, description, seo_title, seo_desc)
+    await post_submission_update(bot.get_channel(UPDATES_CHANNEL_ID), db, id, message.author)
+    # except (ValueError, SyntaxError) as e:
+    #     print(e)
+    #     await discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```")
+    # except Exception as e:
+    #     print(e)
+    #     await discord_send_error(message.channel, "Internal Server Error", "Unable to register submission. Please report this to the admin")
 
 # on ready
 @bot.event

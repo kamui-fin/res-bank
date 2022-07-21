@@ -10,15 +10,15 @@ from bs4 import BeautifulSoup as BS
 
 from config import *
 
-def get_priority(arr, indices):
+def get_priority(entry, attributes):
     val = None
-    for index in indices:
-        val = arr[index]
+    for attr in attributes:
+        val = getattr(entry, attr)
         if val:
             return val
 
 def subs_to_csv(filename = "temp.csv"):
-    rows = db.get_submissions()
+    rows = [list(row) for row in db.get_submissions()]
     with open(filename, 'w') as f:
         writer = csv.writer(f)
         writer.writerow(CSV_HEADERS)
@@ -29,7 +29,7 @@ def subs_to_json(filename = "temp.json"):
     records = []
     for row in rows:
         record = {}
-        for idx, val in enumerate(row):
+        for idx, val in enumerate(list(row)):
             record[JSON_HEADERS[idx]] = val
         records.append(record)
     
@@ -54,7 +54,7 @@ def parse_submission(text):
             return keywords, description, link
         # without
         elif res_min and len(res_min.groups()) == 2:
-            keywords, link = res_full.groups()
+            keywords, link = res_min.groups()
             keywords = fetch_kw(keywords)
             return keywords, None, link
         else:
@@ -76,21 +76,27 @@ async def discord_send_error(ctx, title, desc):
     embed = discord.Embed(title=title, description=desc, color=ERROR_COLOR)
     await ctx.send(embed=embed)
 
-def create_submissions_embed(records, curr, total):
+def create_submissions_embed(records, author):
     # len(records) <= 12
     embed = discord.Embed(title=f"Search Results", color=APP_COLOR)
     for record in records:
-        embed.add_field(name="Title", value=get_priority(record, [2, 3, 1]), inline=False)
-        embed.add_field(name="Link", value=record[4], inline=False)
+        embed.add_field(name=record.link, value=get_priority(record, ["description", "meta_description", "meta_title", "keywords"]), inline=False)
+        if author:
+            embed.set_author(name=author.name, icon_url=author.avatar.url)
     return embed
 
-async def send_paginated_submissions(ctx, records):
+async def send_paginated_submissions(ctx, records, user):
     # 12 records / page
-    # Priority: Custom desc > SEO title > keywords
-    # TODO: set_author() on embed if filtered by author
-    num_pages = ceil(len(records) / 12)
-    embeds = [create_submissions_embed(records[i:i+12], idx, num_pages) for idx, i in enumerate(range(0, len(records), 12), 1)]
+    # Priority: Custom desc > SEO description > SEO title > keywords
+    embeds = [create_submissions_embed(records[i:i+12], user) for i in range(0, len(records), 12)]
     if not embeds:
         await discord_send_error(ctx, "No results", "Unable to find submissions matching criteria")
     else:
         await Paginator.Simple().start(ctx, pages=embeds)
+
+async def post_submission_update(channel, db, id, author):
+    submission = db.get_submission_by_id(id)
+    if submission:
+        embed = discord.Embed(title=submission.url, description=get_priority(submission, ["description", "meta_description", "meta_title", "keywords"]), color=APP_COLOR)
+        embed.set_author(name=author.name, icon_url=author.avatar.url)
+        await channel.send(embed=embed)
