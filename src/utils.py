@@ -44,18 +44,14 @@ def backup():
 def parse_submission(text):
     res_full = re.search(SUB_DESC_RE, text)
     res_min = re.search(SUB_KEY_RE, text)
-    fetch_kw = lambda words: [kw.strip() for kw in words.split(",")]
-
     try:
         # with description
         if res_full and len(res_full.groups()) == 3:
             keywords, description, link = res_full.groups()
-            keywords = fetch_kw(keywords)
             return keywords, description, link
         # without
         elif res_min and len(res_min.groups()) == 2:
             keywords, link = res_min.groups()
-            keywords = fetch_kw(keywords)
             return keywords, None, link
         else:
             raise SyntaxError
@@ -65,12 +61,27 @@ def parse_submission(text):
 def fetch_meta(link):
     response = requests.get(link)
     soup = BS(response.text, features="html.parser")
-    title = soup.find("meta",  property="og:title")
-    desc = soup.find("meta",  property="og:description")
 
-    title = title["content"] if title else None
-    desc = desc["content"] if desc else None
-    return title, desc
+    page_title = soup.find("title")
+    page_title = page_title.string if page_title else None
+
+    page_desc = soup.find("meta", attrs={'name': 'description'})
+    page_desc = page_desc.content if page_desc else None
+
+    page_keywords = soup.find("meta", attrs={'name': 'keywords'})
+    page_keywords = page_keywords.content if page_keywords else None
+
+    og_title = soup.find("meta",  property="og:title")
+    og_title = og_title.content if og_title else None
+
+    og_desc = soup.find("meta",  property="og:description")
+    og_desc = og_desc.content if og_desc else None
+
+    return {
+        "title": og_title or page_title,
+        "description": og_desc or page_desc,
+        "keywords": page_keywords
+    }
 
 async def discord_send_error(ctx, title, desc):
     embed = discord.Embed(title=title, description=desc, color=ERROR_COLOR)

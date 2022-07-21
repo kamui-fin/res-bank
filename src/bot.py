@@ -1,13 +1,12 @@
 """
 TODO
-- Display in #db
-- Import from bookmarks?
+- Import and export bookmarks
 - Docs
 """
 
+import sys
 import discord
 import os
-import re
 import schedule
 import typing
 from discord.ext import commands
@@ -51,6 +50,42 @@ async def search(ctx, query: str, user: typing.Optional[discord.Member], limit: 
     await send_paginated_submissions(ctx, records, user)
 
 @bot.command()
+async def importlinks(ctx, keywords: typing.Optional[str]):
+    files = ctx.message.attachments
+    if not files:
+        await discord_send_error(ctx, "No file supplied", "Must supply a file containing a link on each line to import")
+    else:
+        file = files[0]
+
+        file_request = requests.get(file.url)
+        links = file_request.content.splitlines()
+        author = ctx.message.author
+
+        # TODO: optimize to batch insert
+        count = 0
+        for link in links:
+            link = link.decode("utf-8")
+            if not re.search(LINK_RE, link):
+                continue
+
+            try:
+                seo_data = fetch_meta(link)
+                seo_keywords, seo_title, seo_desc = seo_data["keywords"], seo_data["title"], seo_data["description"]
+                
+                id = db.insert_submission(keywords or seo_keywords or seo_title, link, author.id, "", seo_title, seo_desc)
+                await post_submission_update(bot.get_channel(UPDATES_CHANNEL_ID), db, id, author)
+                count += 1
+            except:
+                continue
+
+        if count:
+            embed = discord.Embed(title="Success", description=f"Successfully imported {count} entries", color=SUCCESS_COLOR)
+            await ctx.send(embed=embed)
+        else:
+            await discord_send_error(ctx, "Error", "Could not import any entries from file")
+
+
+@bot.command()
 async def help(ctx):
     await ctx.send("help")
 
@@ -66,18 +101,19 @@ async def on_message(message):
     if message.attachments:
         msg += f" {message.attachments[0].url}"
 
-    # try:
-    # no success msg to avoid clogging up channel
-    keywords, description, link = parse_submission(msg)
-    seo_title, seo_desc = fetch_meta(link)
-    id = db.insert_submission(','.join(keywords), link, message.author.id, description, seo_title, seo_desc)
-    await post_submission_update(bot.get_channel(UPDATES_CHANNEL_ID), db, id, message.author)
-    # except (ValueError, SyntaxError) as e:
-    #     print(e)
-    #     await discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```")
-    # except Exception as e:
-    #     print(e)
-    #     await discord_send_error(message.channel, "Internal Server Error", "Unable to register submission. Please report this to the admin")
+    try:
+        keywords, description, link = parse_submission(msg)
+        seo_data = fetch_meta(link)
+        seo_keywords, seo_title, seo_desc = seo_data["keywords"], seo_data["title"], seo_data["description"]
+        
+        id = db.insert_submission(keywords or seo_keywords or seo_title, link, message.author.id, description, seo_title, seo_desc)
+        await post_submission_update(bot.get_channel(UPDATES_CHANNEL_ID), db, id, message.author)
+    except (ValueError, SyntaxError) as e:
+        print(e)
+        await discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```")
+    except Exception as e:
+        print(e)
+        await discord_send_error(message.channel, "Internal Server Error", "Unable to register submission. Please report this to the admin")
 
 # on ready
 @bot.event
@@ -85,6 +121,10 @@ async def on_ready():
     print(f'\nlogged in as {bot.user} @{str(datetime.datetime.now())}')
     print(f'prefix: {PREFIX}\n')
 
-bot.run(os.getenv('TOKEN'))
+token = os.getenv('TOKEN')
+if not token:
+    sys.exit("Must set a token in .env to run bot")
+
+bot.run(token)
 
 schedule.every().monday.do(backup)
