@@ -1,7 +1,10 @@
+import discord
 import datetime
 import csv
 import json
+import re
 import requests
+import Paginator
 from math import ceil
 from bs4 import BeautifulSoup as BS
 
@@ -41,7 +44,7 @@ def backup():
 def parse_submission(text):
     res_full = re.search(SUB_DESC_RE, text)
     res_min = re.search(SUB_KEY_RE, text)
-    fetch_kw = lambda words: [kw.strip() for kw in wordss.split(",")]
+    fetch_kw = lambda words: [kw.strip() for kw in words.split(",")]
 
     try:
         # with description
@@ -57,16 +60,16 @@ def parse_submission(text):
         else:
             raise SyntaxError
     except: # propagate split() and syntax errors
-        raise err
+        raise
 
 def fetch_meta(link):
-    response = requests.get(url)
-    soup = BS(response.text)
+    response = requests.get(link)
+    soup = BS(response.text, features="html.parser")
     title = soup.find("meta",  property="og:title")
     desc = soup.find("meta",  property="og:description")
 
     title = title["content"] if title else None
-    desc = url["content"] if url else None
+    desc = desc["content"] if desc else None
     return title, desc
 
 async def discord_send_error(ctx, title, desc):
@@ -75,16 +78,15 @@ async def discord_send_error(ctx, title, desc):
 
 def create_submissions_embed(records, curr, total):
     # len(records) <= 12
-    embed = discord.Embed(title="Results - {curr} of {total}", color=APP_COLOR)
+    embed = discord.Embed(title=f"Search Results", color=APP_COLOR)
     for record in records:
         embed.add_field(name="Title", value=get_priority(record, [2, 3, 1]), inline=False)
-        embed.add_field(name="Link", value=record[5], inline=False)
+        embed.add_field(name="Link", value=record[4], inline=False)
     return embed
 
 async def send_paginated_submissions(ctx, records):
     # 12 records / page
     # Priority: Custom desc > SEO title > keywords
-    # Paginate with buttons
     # TODO: set_author() on embed if filtered by author
     num_pages = ceil(len(records) / 12)
     embeds = [create_submissions_embed(records[i:i+12], idx, num_pages) for idx, i in enumerate(range(0, len(records), 12), 1)]

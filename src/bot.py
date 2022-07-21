@@ -1,7 +1,5 @@
 """
 TODO
-- Search command
-    - By author, date ranges, text query, filter
 - Import from bookmarks?
 - Docs
 """
@@ -66,10 +64,13 @@ async def on_message(message):
     try:
         # no success msg to avoid clogging up channel
         keywords, description, link = parse_submission(msg)
-        seo_title, seo_desc = fetch_metadesc(link)
+        seo_title, seo_desc = fetch_meta(link)
         db.insert_submission(','.join(keywords), link, message.author.id, description, seo_title, seo_desc)
     except (ValueError, SyntaxError) as e:
-        await discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```", ERROR_COLOR)
+        await discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s) and URL OR attachment. Example: ```Python https://docs.python.org/3/tutorial/venv.html```")
+    except Exception as e:
+        print(e)
+        await discord_send_error(message.channel, "Internal Server Error", "Unable to register submission. Please report this to the admin")
 
 # on ready
 @bot.event

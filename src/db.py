@@ -1,4 +1,5 @@
 import sqlite3
+import os
 
 class Database:
     def __init__(self, path):
@@ -17,7 +18,23 @@ class Database:
                 url TEXT NOT NULL UNIQUE,
                 author INTEGER NOT NULL,
                 created_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
+            )'''
+        )
+
+        self.cur.execute('''
+            CREATE VIRTUAL TABLE IF NOT EXISTS search_sub USING fts5 (
+                keywords, description, meta_title, meta_description, url, author, created_on
             )
+        ''')
+
+        # for now keep it as a duplicate
+        self.cur.execute('''
+            CREATE TRIGGER IF NOT EXISTS insert_submission_trigger 
+            AFTER INSERT ON submissions 
+            BEGIN 
+            INSERT OR IGNORE INTO search_sub
+            VALUES (NEW.keywords, NEW.description, NEW.meta_title, NEW.meta_description, NEW.url, NEW.author, NEW.created_on);
+            END;
         ''')
 
     def get_submissions(self):
@@ -25,10 +42,10 @@ class Database:
         return self.cur.fetchall()
 
     def get_submissions_by_query(self, query, user_id, limit):
-        sql = """SELECT * FROM submissions WHERE 1"""
+        sql = """SELECT * FROM search_sub WHERE 1"""
         params = {}
         if query:
-            sql += " AND submissions MATCH :query"
+            sql += " AND search_sub MATCH :query"
             params["query"] = query
         if user_id:
             sql += " AND author = :author"
@@ -36,11 +53,11 @@ class Database:
         if limit:
             sql += " LIMIT :limit"
             params["limit"] = limit
-        self.cur.execute(sql)
+        self.cur.execute(sql, params)
         return self.cur.fetchall()
     
     def insert_submission(self, keyword, url, author, desc = None, meta_title = None, meta_desc = None):
-        self.cur.execute("""INSERT INTO submissions (keyword, url, author, desc, meta_title, meta_description) 
+        self.cur.execute("""INSERT INTO submissions (keywords, url, author, description, meta_title, meta_description) 
                             VALUES (?, ?, ?, ?, ?, ?)""",
                             (keyword, url, author, desc, meta_title, meta_desc))
         self.conn.commit()
