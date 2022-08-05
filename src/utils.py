@@ -17,14 +17,14 @@ def get_priority(entry, attributes):
         if val:
             return val
 
-def subs_to_csv(filename = "temp.csv"):
+def subs_to_csv(db, filename = "temp.csv"):
     rows = [list(row) for row in db.get_submissions()]
     with open(filename, 'w') as f:
         writer = csv.writer(f)
         writer.writerow(CSV_HEADERS)
         writer.writerows(rows)
 
-def subs_to_json(filename = "temp.json"):
+def subs_to_json(db, filename = "temp.json"):
     rows = db.get_submissions()
     records = []
     for row in rows:
@@ -36,10 +36,10 @@ def subs_to_json(filename = "temp.json"):
     with open(filename, "w") as f:
         json.dump(records, f)
 
-def backup():
+def backup(db):
     BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
     full_path = BACKUPS_DIR / pathlib.Path(f"{datetime.datetime.now():%Y-%m-%d}.json")
-    subs_to_json(full_path)
+    subs_to_json(db, full_path)
 
 def parse_submission(text):
     res_full = re.search(SUB_DESC_RE, text)

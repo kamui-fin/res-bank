@@ -1,18 +1,24 @@
 const urlInput = document.querySelector("#url");
 const descriptionInput = document.querySelector("#description");
-const form = document.forms["add-form"]
+const authorInput = document.querySelector("#author");
+const form = document.forms["add-form"];
 
-const sendMessage = (cmd) => {
+authorInput.value = localStorage.getItem("id");
+
+const sendMessage = (cmd, authorId) => {
     const request = new XMLHttpRequest();
-    request.open("POST", "https://discord.com/api/webhooks/1004941371997704413/VZhV-7V-IsiJwB3NKI4xJhDLt81LrMw-A6cGDce_70vgjjBpQqECSQdq9txDjhHfl2zm")
-    request.setRequestHeader('Content-type', 'application/json');
+    request.open(
+        "POST",
+        "https://discord.com/api/webhooks/1004941371997704413/VZhV-7V-IsiJwB3NKI4xJhDLt81LrMw-A6cGDce_70vgjjBpQqECSQdq9txDjhHfl2zm"
+    );
+    request.setRequestHeader("Content-type", "application/json");
     const params = {
-        username: "Browser Extension",
+        username: authorId,
         avatar_url: "",
-        content: cmd
-    }
-    request.send(JSON.stringify(params))
-}
+        content: cmd,
+    };
+    request.send(JSON.stringify(params));
+};
 
 browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const { title, url } = tabs[0];
@@ -20,13 +26,17 @@ browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     descriptionInput.value = title;
 });
 
-form.addEventListener("submit", event => {
-    event.preventDefault()
+form.addEventListener("submit", (event) => {
+    event.preventDefault();
     const formData = new FormData(form);
-    const keywords = formData.get("keywords")
-    const description = formData.get("description")
-    const url = formData.get("url")
+    const keywords = formData.get("keywords");
+    const description = formData.get("description");
+    const authorId = formData.get("author");
+    const url = formData.get("url");
 
-    const command = `"${keywords}" "${description}" ${url}`
-    sendMessage(command)
-})
+    // save author id in localstorage
+    localStorage.setItem("id", authorId);
+
+    const command = `"${keywords}" "${description}" ${url}`;
+    sendMessage(command, authorId);
+});
