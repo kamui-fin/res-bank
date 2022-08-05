@@ -16,10 +16,19 @@
     </head>
     <body>
         <main>
+            <div id="success" class="hide">
+                Successfully added entry to resource bank.
+            </div>
             <form id="add-form" action="" method="POST">
                 <div class="form-group">
                     <label for="#author">User ID</label>
-                    <input type="text" id="author" name="author" required />
+                    <input
+                        type="text"
+                        pattern="[0-9]{18}"
+                        id="author"
+                        name="author"
+                        required
+                    />
                 </div>
                 <div class="form-group">
                     <label for="#keywords">Keywords</label>
@@ -31,7 +40,7 @@
                 </div>
                 <div class="form-group">
                     <label for="#url">URL</label>
-                    <input type="text" id="url" name="url" required />
+                    <input type="url" id="url" name="url" required />
                 </div>
                 <button type="submit" id="submit-btn">Add to bank</button>
             </form>
