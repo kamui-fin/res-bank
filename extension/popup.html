@@ -6,9 +6,32 @@
             type="application/javascript"
             src="browser-polyfill.js"
         ></script>
-        <script type="application/javascript" src="popup.js"></script>
-        <title></title>
+        <link rel="stylesheet" href="style.css" media="all" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap"
+            rel="stylesheet"
+        />
     </head>
     <body>
+        <main>
+            <form id="add-form" action="" method="POST">
+                <div class="form-group">
+                    <label for="#keywords">Keywords</label>
+                    <input type="text" id="keywords" name="keywords" required />
+                </div>
+                <div class="form-group">
+                    <label for="#description">Description</label>
+                    <input type="text" id="description" name="description" />
+                </div>
+                <div class="form-group">
+                    <label for="#url">URL</label>
+                    <input type="text" id="url" name="url" required/>
+                </div>
+                <button type="submit" id="submit-btn">Add to bank</button>
+            </form>
+        </main>
     </body>
+    <script type="application/javascript" src="popup.js"></script>
 </html>
