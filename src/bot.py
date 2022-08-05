@@ -138,10 +138,9 @@ async def on_command_error(ctx, error):
     error = getattr(error, 'original', error)
     if isinstance(error, commands.MissingRequiredArgument):
         await discord_send_error(ctx, "Missing argument", str(error))
-    else:
-        await discord_send_error(ctx, "Internal Server Error", "Unable to register submission. Please report this to the admin")
-
-    logging.exception(error)
+    elif error:
+        await discord_send_error(ctx, "Internal Server Error", str(error))
+        raise error
 
 token = os.getenv('TOKEN')
 if not token:

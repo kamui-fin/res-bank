@@ -54,6 +54,8 @@ class Database:
         return self.cur.fetchone()
 
     def get_submissions_by_query(self, query, user_id, limit):
+        query = query.replace("'\\\"", "\"").replace("\\\"'", "\"").replace("\\\"", "\"").replace("\\\"", "\"")
+        print(query)
         sql = """SELECT * FROM search_sub WHERE 1"""
         params = {}
         if query:
@@ -65,6 +67,7 @@ class Database:
         if limit:
             sql += " LIMIT :limit"
             params["limit"] = limit
+        sql += " ORDER BY bm25(search_sub)"
         self.cur.execute(sql, params)
         return self.cur.fetchall()
     
