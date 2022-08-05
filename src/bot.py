@@ -1,4 +1,3 @@
-import logging
 import sys
 import discord
 import time
@@ -47,6 +46,8 @@ async def search(ctx, query: str, user: typing.Optional[discord.Member], limit: 
     records = db.get_submissions_by_query(query, user_id, limit)
     await send_paginated_submissions(ctx, records, user)
 
+# TODO: Very slowwww, needs optimization and reworking
+# needs batch insert and update with pagination
 @bot.command()
 async def importlinks(ctx, keywords: typing.Optional[str]):
     files = ctx.message.attachments
@@ -59,8 +60,7 @@ async def importlinks(ctx, keywords: typing.Optional[str]):
         links = file_request.content.splitlines()
         author = ctx.message.author
 
-        # TODO: optimize to batch insert
-        count = 0
+        rows = []
         for link in links:
             link = link.decode("utf-8")
             if not re.search(LINK_RE, link):
@@ -69,15 +69,14 @@ async def importlinks(ctx, keywords: typing.Optional[str]):
             try:
                 seo_data = fetch_meta(link)
                 seo_keywords, seo_title, seo_desc = seo_data["keywords"], seo_data["title"], seo_data["description"]
-                
-                id = db.insert_submission(keywords or seo_keywords or seo_title, link, author.id, "", seo_title, seo_desc)
-                await post_submission_update(bot.get_channel(UPDATES_CHANNEL_ID), db, id, author)
-                count += 1
+                rows.append((keywords or seo_keywords or seo_title, link, author.id, "", seo_title, seo_desc))
             except:
                 continue
 
-        if count:
-            embed = discord.Embed(title="Success", description=f"Successfully imported {count} entries", color=SUCCESS_COLOR)
+        inserted_row_ids = db.insert_submissions(rows)
+        await post_submissions_update(bot.get_channel(UPDATES_CHANNEL_ID), db, inserted_row_ids, ctx.message.author)
+        if inserted_row_ids:
+            embed = discord.Embed(title="Success", description=f"Successfully imported {len(inserted_row_ids)} entries", color=SUCCESS_COLOR)
             await ctx.send(embed=embed)
         else:
             await discord_send_error(ctx, "Error", "Could not import any entries from file")
@@ -119,8 +118,7 @@ async def on_message(message):
         await message.channel.send(embed=embed)
     except sqlite3.DatabaseError:
         await discord_send_error(message.channel, "Duplicate submission", "Cannot insert a resource that already exists in the database")
-    except (ValueError, SyntaxError) as e:
-        print(e)
+    except (ValueError, SyntaxError):
         await discord_send_error(message.channel, "Invalid format", "Invalid submission format. Must contain keyword(s), an optional description, and URL OR attachment. Example: ```'Python Documentation' 'Useful resource for learning about venv'  https://docs.python.org/3/tutorial/venv.html```")
 
 # on ready

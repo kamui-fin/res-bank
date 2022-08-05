@@ -1,5 +1,4 @@
 import sqlite3
-import os
 from collections import namedtuple
 
 def namedtuple_factory(cursor, row):
@@ -53,9 +52,13 @@ class Database:
         self.cur.execute("SELECT * FROM submissions WHERE id = ?", (id,))
         return self.cur.fetchone()
 
+    def get_submissions_from_ids(self, ids):
+        qs = ", ".join("?" * len(ids))
+        self.cur.execute(f"SELECT * FROM submissions WHERE id IN ({qs})", ids)
+        return self.cur.fetchall()
+
     def get_submissions_by_query(self, query, user_id, limit):
         query = query.replace("'\\\"", "\"").replace("\\\"'", "\"").replace("\\\"", "\"").replace("\\\"", "\"")
-        print(query)
         sql = """SELECT * FROM search_sub WHERE 1"""
         params = {}
         if query:
@@ -77,3 +80,11 @@ class Database:
                             (keyword, url, author, desc, meta_title, meta_desc))
         self.conn.commit()
         return self.cur.lastrowid
+
+    def insert_submissions(self, rows):
+        self.cur.executemany("""INSERT INTO submissions (keywords, url, author, description, meta_title, meta_description) 
+                            VALUES (?, ?, ?, ?, ?, ?)""",
+                            rows)
+        self.conn.commit()
+        assert self.cur.rowcount == len(rows)
+        return list(range(self.cur.lastrowid - self.cur.rowcount + 1, self.cur.lastrowid + 1))

@@ -87,9 +87,9 @@ async def discord_send_error(ctx, title, desc):
     embed = discord.Embed(title=title, description=desc, color=ERROR_COLOR)
     await ctx.send(embed=embed)
 
-def create_submissions_embed(records, author):
+def create_submissions_embed(records, author, title="Search Results"):
     # len(records) <= 12
-    embed = discord.Embed(title=f"Search Results", color=APP_COLOR)
+    embed = discord.Embed(title=title, color=APP_COLOR)
     for record in records:
         embed.add_field(name=record.url, value=get_priority(record, ["description", "meta_description", "meta_title", "keywords"]), inline=False)
         if author:
@@ -111,3 +111,9 @@ async def post_submission_update(channel, db, id, author):
         embed = discord.Embed(title=submission.url, description=get_priority(submission, ["description", "meta_description", "meta_title", "keywords"]), color=APP_COLOR)
         embed.set_author(name=author.name, icon_url=author.avatar.url)
         await channel.send(embed=embed)
+
+async def post_submissions_update(channel, db, ids, author):
+    records = db.get_submissions_from_ids(ids)
+    embeds = [create_submissions_embed(records[i:i+12], author, "Bulk Inserts") for i in range(0, len(records), 12)]
+    if embeds:
+        await Paginator.Simple().start(channel, pages=embeds)
