@@ -1,0 +1,27 @@
+{
+    "name": "Resource Bank",
+    "version": "1.0",
+    "description": "A supplement to the discord bot to automate sending new links",
+    "permissions": ["bookmarks"],
+    "browser_action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "img/icon-16.png",
+            "19": "img/icon-19.png",
+            "38": "img/icon-38.png",
+            "48": "img/icon-48.png",
+            "128": "img/icon-128.png",
+            "256": "img/icon-256.png"
+        }
+    },
+    "background": {
+        "scripts": ["browser-polyfill.js", "background.js"]
+    },
+
+    "content_scripts": [
+        {
+            "js": ["browser-polyfill.js", "content.js"]
+        }
+    ],
+    "manifest_version": 2
+}
