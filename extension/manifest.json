@@ -14,5 +14,10 @@
             "128": "img/icon-128.png",
             "256": "img/icon-256.png"
         }
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "res-bank@kamui"
+        }
     }
 }

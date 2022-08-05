@@ -13,6 +13,7 @@ This is a Discord bot for our server which is meant for centralized resource agg
   - Custom limit option
   - Paginated 12 records per page using new interactions library
 - Immutable records with a constant log of newly added submissions
+- Supplemental cross-browser extension to make it easier & faster to submit records
 
 ## Installation
 
@@ -64,7 +65,7 @@ Batch imports resources to the database using a file of links.
 
 #### Format
 
-`>importlinks` with an attached text file. The file must include _only_ links on separate lines.
+`>importlinks` with an attached text file. The file must include _only_ links on separate lines. It optionally receives a string `keywords` to tag all the links.
 
 #### Example
 
@@ -102,3 +103,9 @@ Exports a list of saved resources into a given filetype parameter (either json o
 ## Backups
 
 Backups of the database are automatically generated every Monday with the script in the form of JSON files. They are placed in the `backups/` directory.
+
+## Extension
+
+This repository includes an extension that works on Firefox and Chrome to make it easier to send the current tab to the resource bank.
+
+![Example of extension](./screenshots/extension.png)
